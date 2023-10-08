@@ -190,19 +190,19 @@ document.getElementById('Save').addEventListener('click', function()
 })
 document.getElementById('Exit').addEventListener('click', function()
 {
-	window.location.href = "/canvas_game/signIn.html";
+	window.location.href = "index.html";
 })
 
 
 function signOut(e)
 {
-	window.location.href = "/canvas_game/signIn.html";
+	window.location.href = "index.html";
 }
 
 document.getElementById('sign-out-button').addEventListener('click', signOut)
 function signOut(e)
 {
-	window.location.href = "/canvas_game/signIn.html";
+	window.location.href = "index.html";
 }
 
 function main() {
