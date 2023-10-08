@@ -1,13 +1,7 @@
-/*
-  Code modified from:
-  http://www.lostdecadegames.com/how-to-make-a-simple-html5-canvas-game/
-  using graphics purchased from vectorstock.com
-*/
 
-/* Initialization.
-Here, we create and add our "canvas" to the page.
-We also load all of our images.
-*/
+const username = localStorage.getItem('username');
+const displplayUsername = document.getElementById('displayUsername');
+displayUsername.innerHTML = 'Hello ' + username;
 
 const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d');
@@ -15,27 +9,19 @@ canvas.width = 512;
 canvas.height = 480;
 document.getElementById('canvas').appendChild(canvas);
 
-let bg = {};
-
-/**
- * Setting up our characters.
- *
- * Note that hero.x represents the X position of our hero.
- * hero.y represents the Y position.
- * We'll need these values to know where to "draw" the hero.
- * The same goes for the monsters
- *
- */
+let bg = {};  
 
 let hero = { x: canvas.width / 2, y: canvas.height / 2 };
 let monsters = [
 	{ x: 100, y: 100 },
 	{ x: 200, y: 200 },
 	{ x: 300, y: 300 },
+	{x: 200, y: 100 },
+	{x: 100, y: 200 },
 ];
 
 let startTime = Date.now();
-const SECONDS_PER_ROUND = 30;
+const SECONDS_PER_ROUND = 10;
 let elapsedTime = 0;
 
 function loadImages() {
@@ -62,17 +48,8 @@ function loadImages() {
 		monster.image.src = `images/monster_${i + 1}.png`;
 	});
 }
-
-/**
- * Keyboard Listeners
- * You can safely ignore this part, for now.
- *
- * This is just to let JavaScript know when the user has pressed a key.
- */
 let keysPressed = {};
 function setupKeyboardListeners() {
-	// Check for keys pressed where key represents the keycode captured
-	// For now, do not worry too much about what's happening here.
 	document.addEventListener(
 		'keydown',
 		function (e) {
@@ -90,44 +67,74 @@ function setupKeyboardListeners() {
 	);
 }
 
-/**
- *  Update game objects - change player position based on key pressed
- *  and check to see if the monster has been caught!
- *
- *  If you change the value of 5, the player will move at a different rate.
- */
+const applicationState = {
+	isGameOver: false,
+	isPaused: false,
+	currentUser: "",
+	highScore: {
+	  score: 0,
+	  user: null,
+	},
+	gameHistory: [{ user: null, score: 0}],
+  };
+  
+  
+function checkIfHeroGoOffCanvas () {
+	if(hero.x <= 0 ) hero.x = canvas.width - 32;
+	if(hero.x >= canvas.width) hero.x = 0; 
+	if(hero.y <= 0) hero.y = canvas.height -32;
+	if(hero.y >= canvas.height) hero.y = 0;
+}
+//random place Monster
+function randomlyPlace(axis)
+{
+	const maximum = axis === 'x' ? canvas.width : canvas.height
+	var randomNumber  = Math.floor(Math.random() * (maximum - 0 + 1)) + 0;
+	return randomNumber
+}
+
+function showModal() {
+    $('#countdownModal').modal('show');
+}
 let update = function () {
 	// Update the time.
-	elapsedTime = Math.floor((Date.now() - startTime) / 1000);
-
-	if (keysPressed['ArrowUp']) {
+	if (!applicationState.isPaused) {
+		{
+			elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+			console.log("Elapsed Time: ", elapsedTime);
+			if (SECONDS_PER_ROUND - elapsedTime <= 0 && !applicationState.isGameOver) {
+				console.log("Showing Modal");
+				applicationState.isGameOver = true; 
+				showModal();
+			}
+		}
+	}
+	if (keysPressed['ArrowUp']|| keysPressed['w']) {
 		hero.y -= 5;
 	}
-	if (keysPressed['ArrowDown']) {
+	if (keysPressed['ArrowDown'] || keysPressed['s']) {
 		hero.y += 5;
 	}
-	if (keysPressed['ArrowLeft']) {
+	if (keysPressed['ArrowLeft']|| keysPressed['a']) {
 		hero.x -= 5;
 	}
-	if (keysPressed['ArrowRight']) {
+	if (keysPressed['ArrowRight']|| keysPressed['d']) {
 		hero.x += 5;
 	}
 
-	// Check if player and monster collided. Our images
-	// are 32 pixels big.
 	monsters.forEach((monster) => {
 		if (hero.x <= monster.x + 32 && monster.x <= hero.x + 32 && hero.y <= monster.y + 32 && monster.y <= hero.y + 32) {
-			// Pick a new location for the monster.
-			// Note: Change this to place the monster at a new, random location.
-			monster.x = monster.x + 50;
-			monster.y = monster.y + 70;
+			monster.x = randomlyPlace('x');
+			monster.y = randomlyPlace('y');
+			applicationState.highScore.score++;
+			console.log({applicationState});
 		}
 	});
+	checkIfHeroGoOffCanvas();
 };
 
-/**
- * This function, render, runs as often as possible.
- */
+
+//render
 function render() {
 	if (bg.ready) {
 		ctx.drawImage(bg.image, 0, 0);
@@ -140,14 +147,64 @@ function render() {
 			ctx.drawImage(monster.image, monster.x, monster.y);
 		}
 	});
-	ctx.fillText(`Seconds Remaining: ${SECONDS_PER_ROUND - elapsedTime}`, 20, 100);
+	ctx.fillText(`Seconds Remaining: ${SECONDS_PER_ROUND - elapsedTime}`, 10, 60);
+	ctx.fillText(`Score: ${applicationState.highScore.score}`, 10, 50 )
 }
 
-/**
- * The main game loop. Most every game will have two distinct parts:
- * update (updates the state of the game, in this case our hero and monster)
- * render (based on the state of our game, draw the right things)
- */
+$('#countdownModal').on('hidden.bs.modal', function () {
+    applicationState.isPaused = false;
+});
+$('#countdownModal').on('shown.bs.modal', function () {
+    applicationState.isPaused = true;
+});
+function resetGame() {
+    // Reset elapsedTime
+    elapsedTime = 0;
+    startTime = Date.now();
+
+    // Reset score
+    applicationState.highScore.score = 0;
+	applicationState.isGameOver = false;
+
+}
+
+document.getElementById('Save').addEventListener('click', function()
+{
+	const storeApplicastionState = JSON.stringify(applicationState);
+	localStorage.setItem('class', storeApplicastionState);
+	const getTheInfoFromClass = localStorage.getItem('class');
+	//store in the
+	const storeTheScore = JSON.parse(getTheInfoFromClass).highScore.score;
+	const storeTheName = localStorage.getItem('username');
+
+	const putTheNamenToLeaderBoard = document.getElementById('firstName');
+	putTheNamenToLeaderBoard.innerHTML = storeTheName;
+	
+	const putTheScoreToLeaderBoard = document.getElementById('firstScore');
+	const displayGoldMedal = document.getElementsByClassName('gold-medal')[0];
+	putTheScoreToLeaderBoard.innerHTML = storeTheScore + displayGoldMedal.outerHTML;
+	document.getElementById('countdownModal').style = '';
+	$('.modal-backdrop').remove();
+	applicationState.isPaused = false;
+	resetGame();
+})
+document.getElementById('Exit').addEventListener('click', function()
+{
+	window.location.href = "/canvas_game/signIn.html";
+})
+
+
+function signOut(e)
+{
+	window.location.href = "/canvas_game/signIn.html";
+}
+
+document.getElementById('sign-out-button').addEventListener('click', signOut)
+function signOut(e)
+{
+	window.location.href = "/canvas_game/signIn.html";
+}
+
 function main() {
 	update();
 	render();
@@ -155,11 +212,6 @@ function main() {
 	// for web browsers.
 	requestAnimationFrame(main);
 }
-
-// Cross-browser support for requestAnimationFrame.
-// Safely ignore this line. It's mostly here for people with old web browsers.
-var w = window;
-requestAnimationFrame = w.requestAnimationFrame || w.webkitRequestAnimationFrame || w.msRequestAnimationFrame || w.mozRequestAnimationFrame;
 
 // Let's play this game!
 loadImages();
