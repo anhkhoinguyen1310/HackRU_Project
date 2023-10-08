@@ -198,7 +198,7 @@ document.getElementById('Exit').addEventListener('click', function()
 {
 	
 	updateGameHistory();
-	//window.location.href = "index.html";
+	window.location.href = "index.html";
 
 })
 
