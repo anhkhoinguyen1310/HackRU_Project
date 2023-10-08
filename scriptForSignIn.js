@@ -6,5 +6,4 @@ document.getElementById('sign-in-button').addEventListener("click", function()
     localStorage.setItem('username', userName);
     window.location.href = "/gameplay.html";
     console.log(location.href)
-    
 })

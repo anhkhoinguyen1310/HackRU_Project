@@ -1,4 +1,3 @@
-
 const username = localStorage.getItem('username');
 const displplayUsername = document.getElementById('displayUsername');
 displayUsername.innerHTML = 'Hello ' + username;
@@ -8,7 +7,18 @@ const ctx = canvas.getContext('2d');
 canvas.width = 512;
 canvas.height = 480;
 document.getElementById('canvas').appendChild(canvas);
+const applicationState = {
+	isGameOver: false,
+	isPaused: false,
+	currentUser: "",
+	highScore: {
+	  score: 0,
+	  user: null,
+	},
+	gameHistory: [{ user: null, score: 0}],
+  };
 
+  
 let bg = {};  
 
 let hero = { x: canvas.width / 2, y: canvas.height / 2 };
@@ -67,18 +77,8 @@ function setupKeyboardListeners() {
 	);
 }
 
-const applicationState = {
-	isGameOver: false,
-	isPaused: false,
-	currentUser: "",
-	highScore: {
-	  score: 0,
-	  user: null,
-	},
-	gameHistory: [{ user: null, score: 0}],
-  };
-  
-  
+
+  applicationState.highScore.user = username;
 function checkIfHeroGoOffCanvas () {
 	if(hero.x <= 0 ) hero.x = canvas.width - 32;
 	if(hero.x >= canvas.width) hero.x = 0; 
@@ -101,9 +101,7 @@ let update = function () {
 	if (!applicationState.isPaused) {
 		{
 			elapsedTime = Math.floor((Date.now() - startTime) / 1000);
-			console.log("Elapsed Time: ", elapsedTime);
 			if (SECONDS_PER_ROUND - elapsedTime <= 0 && !applicationState.isGameOver) {
-				console.log("Showing Modal");
 				applicationState.isGameOver = true; 
 				showModal();
 			}
@@ -127,7 +125,6 @@ let update = function () {
 			monster.x = randomlyPlace('x');
 			monster.y = randomlyPlace('y');
 			applicationState.highScore.score++;
-			console.log({applicationState});
 		}
 	});
 	checkIfHeroGoOffCanvas();
@@ -148,7 +145,7 @@ function render() {
 		}
 	});
 	ctx.fillText(`Seconds Remaining: ${SECONDS_PER_ROUND - elapsedTime}`, 10, 60);
-	ctx.fillText(`Score: ${applicationState.highScore.score}`, 10, 50 )
+	ctx.fillText(`Score: ${applicationState.highScore.score}`, 10, 50)
 }
 
 $('#countdownModal').on('hidden.bs.modal', function () {
@@ -165,7 +162,6 @@ function resetGame() {
     // Reset score
     applicationState.highScore.score = 0;
 	applicationState.isGameOver = false;
-
 }
 
 document.getElementById('Save').addEventListener('click', function()
@@ -173,6 +169,7 @@ document.getElementById('Save').addEventListener('click', function()
 	const storeApplicastionState = JSON.stringify(applicationState);
 	localStorage.setItem('class', storeApplicastionState);
 	const getTheInfoFromClass = localStorage.getItem('class');
+	
 	//store in the
 	const storeTheScore = JSON.parse(getTheInfoFromClass).highScore.score;
 	const storeTheName = localStorage.getItem('username');
@@ -183,25 +180,32 @@ document.getElementById('Save').addEventListener('click', function()
 	const putTheScoreToLeaderBoard = document.getElementById('firstScore');
 	const displayGoldMedal = document.getElementsByClassName('gold-medal')[0];
 	putTheScoreToLeaderBoard.innerHTML = storeTheScore + displayGoldMedal.outerHTML;
-	document.getElementById('countdownModal').style = '';
-	$('.modal-backdrop').remove();
+	$('#countdownModal').modal('hide');
 	applicationState.isPaused = false;
 	resetGame();
 })
+
+function updateGameHistory() {
+    const currentUser = username;
+    const currentScore = applicationState.highScore.score;
+    applicationState.gameHistory.push({ user: currentUser, score: currentScore });
+	console.log("Updated Game History: ", applicationState.gameHistory); // Debug statement
+	localStorage.setItem('class', JSON.stringify(applicationState));
+
+}
+
 document.getElementById('Exit').addEventListener('click', function()
 {
-	window.location.href = "index.html";
+	
+	updateGameHistory();
+	//window.location.href = "index.html";
+
 })
-
-
-function signOut(e)
-{
-	window.location.href = "index.html";
-}
 
 document.getElementById('sign-out-button').addEventListener('click', signOut)
 function signOut(e)
 {
+	updateGameHistory();
 	window.location.href = "index.html";
 }
 
@@ -213,7 +217,6 @@ function main() {
 	requestAnimationFrame(main);
 }
 
-// Let's play this game!
 loadImages();
 setupKeyboardListeners();
 main();
