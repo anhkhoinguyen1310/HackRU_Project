@@ -1,7 +1,6 @@
 const username = localStorage.getItem('username');
 const displplayUsername = document.getElementById('displayUsername');
 displayUsername.innerHTML = 'Hello ' + username;
-
 const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d');
 canvas.width = 512;
@@ -29,6 +28,79 @@ let monsters = [
 	{x: 200, y: 100 },
 	{x: 100, y: 200 },
 ];
+let joystick = {
+    baseX: 100, // Initial x-position of the joystick base
+    baseY: 400, // Initial y-position of the joystick base
+    stickX: 100, // Initial x-position of the joystick stick
+    stickY: 400, // Initial y-position of the joystick stick
+    baseRadius: 50,
+    stickRadius: 30,
+    maxDistance: 50,
+    isTouched: false
+};
+
+function drawJoystick() {
+    if (!joystick.isTouched) return; // Only draw if the joystick is being touched
+
+    // Draw base
+    ctx.beginPath();
+    ctx.arc(joystick.baseX, joystick.baseY, joystick.baseRadius, 0, Math.PI * 2, true);
+    ctx.fillStyle = "rgba(200, 200, 200, 0.6)";
+    ctx.fill();
+
+    // Draw stick
+    ctx.beginPath();
+    ctx.arc(joystick.stickX, joystick.stickY, joystick.stickRadius, 0, Math.PI * 2, true);
+    ctx.fillStyle = "rgba(100, 100, 100, 0.6)";
+    ctx.fill();
+}
+
+function handleTouchStart(event) {
+    const touch = event.touches[0];
+    const touchX = touch.clientX;
+    const touchY = touch.clientY;
+
+    // Check if the touch is within the joystick base
+    const dx = touchX - joystick.baseX;
+    const dy = touchY - joystick.baseY;
+    if (Math.sqrt(dx * dx + dy * dy) < joystick.baseRadius) {
+        joystick.isTouched = true;
+    }
+}
+
+function handleTouchMove(event) {
+    if (!joystick.isTouched) return;
+    event.preventDefault();
+
+    const touch = event.touches[0];
+    const touchX = touch.clientX;
+    const touchY = touch.clientY;
+
+    const dx = touchX - joystick.baseX;
+    const dy = touchY - joystick.baseY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    const angle = Math.atan2(dy, dx);
+
+    if (distance < joystick.maxDistance) {
+        joystick.stickX = touchX;
+        joystick.stickY = touchY;
+    } else {
+        joystick.stickX = joystick.baseX + Math.cos(angle) * joystick.maxDistance;
+        joystick.stickY = joystick.baseY + Math.sin(angle) * joystick.maxDistance;
+    }
+}
+
+function handleTouchEnd(event) {
+    if (!joystick.isTouched) return;
+
+    joystick.isTouched = false;
+    // Reset stick to base center
+    joystick.stickX = joystick.baseX;
+    joystick.stickY = joystick.baseY;
+}
+
+
+
 
 let startTime = Date.now();
 const SECONDS_PER_ROUND = 10;
@@ -60,25 +132,22 @@ function loadImages() {
 }
 let keysPressed = {};
 function setupKeyboardListeners() {
-	document.addEventListener(
-		'keydown',
+	document.addEventListener('keydown',
 		function (e) {
 			keysPressed[e.key] = true;
-		},
-		false
-	);
+		}
+		,false);
 
-	document.addEventListener(
-		'keyup',
+	document.addEventListener('keyup',
 		function (e) {
 			keysPressed[e.key] = false;
-		},
-		false
-	);
+		}
+		,false);
 }
 
 
-  applicationState.highScore.user = username;
+applicationState.highScore.user = username;
+
 function checkIfHeroGoOffCanvas () {
 	if(hero.x <= 0 ) hero.x = canvas.width - 32;
 	if(hero.x >= canvas.width) hero.x = 0; 
@@ -92,7 +161,7 @@ function randomlyPlace(axis)
 	var randomNumber  = Math.floor(Math.random() * (maximum - 0 + 1)) + 0;
 	return randomNumber
 }
-
+//showing the pop-up modal after finished playing 
 function showModal() {
     $('#countdownModal').modal('show');
 }
